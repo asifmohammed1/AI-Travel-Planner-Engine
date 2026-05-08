@@ -8,8 +8,8 @@
 [![Google Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-34A853.svg)](https://cloud.google.com/run)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-🚀 **Live Demo (Google Cloud Run):** [https://ai-travel-planner-f746ccalyq-uc.a.run.app](https://ai-travel-planner-f746ccalyq-uc.a.run.app)
-> **API Docs:** [https://ai-travel-planner-f746ccalyq-uc.a.run.app/api/docs](https://ai-travel-planner-f746ccalyq-uc.a.run.app/api/docs)
+🚀 **Live Demo (Google Cloud Run):** [https://ai-travel-planner-295285969833.us-central1.run.app](https://ai-travel-planner-295285969833.us-central1.run.app)
+> **API Docs:** [https://ai-travel-planner-295285969833.us-central1.run.app/api/docs](https://ai-travel-planner-295285969833.us-central1.run.app/api/docs)
 
 ---
 
