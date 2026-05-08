@@ -8,8 +8,8 @@
 [![Google Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-34A853.svg)](https://cloud.google.com/run)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-🚀 **Live Demo (Google Cloud Run):** [https://ai-travel-planner-xxxx-uc.a.run.app](https://ai-travel-planner-xxxx-uc.a.run.app)
-> *(Replace with your deployed Cloud Run URL after deployment)*
+🚀 **Live Demo (Google Cloud Run):** [https://ai-travel-planner-f746ccalyq-uc.a.run.app](https://ai-travel-planner-f746ccalyq-uc.a.run.app)
+> **API Docs:** [https://ai-travel-planner-f746ccalyq-uc.a.run.app/api/docs](https://ai-travel-planner-f746ccalyq-uc.a.run.app/api/docs)
 
 ---
 

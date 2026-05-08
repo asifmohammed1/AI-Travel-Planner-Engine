@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import re
-from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
 import google.generativeai as genai
@@ -45,6 +44,11 @@ def _extract_json(text: str) -> Any:
         raise ValueError(f"Cannot parse JSON from model response: {text[:200]}")
 
 
+# Simple thread-safe in-memory cache (lru_cache has issues with Cloud Run concurrency)
+_plan_cache: Dict[Tuple, Dict[str, Any]] = {}
+_CACHE_MAX = 64
+
+
 def generate_itinerary(
     destination: str,
     days: int,
@@ -54,30 +58,27 @@ def generate_itinerary(
 ) -> Dict[str, Any]:
     """
     Call Gemini to generate a complete, structured travel plan.
-    Results are cached in-memory for identical (destination, days, budget,
-    travelers, interests) combinations — avoids redundant API calls.
+    Results are cached in-memory for identical trip parameters.
 
     Returns a dict with keys:
       itinerary, attractions, food_suggestions, hidden_gems,
       travel_tips, budget_breakdown, weather_info
     """
-    # Use a hashable key for caching
     cache_key = (destination.lower(), days, budget, travelers, tuple(sorted(interests)))
-    return _cached_generate(cache_key, destination, days, budget, travelers, interests)
 
+    if cache_key in _plan_cache:
+        logger.info(f"Cache hit for {destination}")
+        return _plan_cache[cache_key]
 
-@lru_cache(maxsize=64)
-def _cached_generate(
-    cache_key: Tuple,  # hashable key for lru_cache
-    destination: str,
-    days: int,
-    budget: float,
-    travelers: int,
-    interests: Tuple[str, ...],
-) -> Dict[str, Any]:
-    """LRU-cached Gemini call — up to 64 unique trip combinations are memoized."""
-    interests_list = list(interests)
-    return _call_gemini(destination, days, budget, travelers, interests_list)
+    result = _call_gemini(destination, days, budget, travelers, interests)
+
+    # Evict oldest entry if cache is full
+    if len(_plan_cache) >= _CACHE_MAX:
+        oldest = next(iter(_plan_cache))
+        del _plan_cache[oldest]
+
+    _plan_cache[cache_key] = result
+    return result
 
 
 def _call_gemini(
