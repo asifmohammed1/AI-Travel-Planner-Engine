@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered travel planning engine. Generate personalized itineraries, discover hidden gems, and optimize your budget with Gemini AI and Google Maps." />
+  <meta name="keywords" content="travel planner, AI itinerary, Google Maps, Gemini AI, trip planning" />
+  <meta property="og:title" content="AI Travel Planning Engine" />
+  <meta property="og:description" content="Intelligent travel assistant powered by Gemini AI" />
+  <title>AI Travel Planning &amp; Experience Engine</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a class="nav-brand" href="/" aria-label="AI Travel Planner Home">
+        <span class="icon">✈️</span>
+        <span>TravelAI Engine</span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="#planner">Plan Trip</a></li>
+        <li><a href="/api/docs" target="_blank" rel="noopener">API Docs</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" role="banner">
+    <div class="container">
+      <div class="hero-badge">
+        <span>⚡</span>
+        <span>Powered by Gemini AI &amp; Google Maps</span>
+      </div>
+      <h1>Plan Your Dream Trip<br />with Artificial Intelligence</h1>
+      <p>
+        Tell us your destination and preferences — our AI crafts a complete
+        day-by-day itinerary with attractions, food, hidden gems, and smart
+        budget allocation in seconds.
+      </p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num">10s</div>
+          <div class="label">Average generation</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">∞</div>
+          <div class="label">Destinations</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">AI</div>
+          <div class="label">Personalized</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Trip Planner Form -->
+    <section id="planner" aria-labelledby="planner-title">
+      <div class="container">
+        <div class="glass-card form-card">
+          <h2 id="planner-title" class="form-title">🗺️ Plan Your Trip</h2>
+          <p class="form-subtitle">Fill in your travel details and let AI do the rest</p>
+
+          <form id="trip-form" novalidate aria-label="Trip planning form">
+            <div class="form-grid">
+
+              <!-- Destination -->
+              <div class="form-group full-width">
+                <label for="destination">
+                  Destination <span class="required" aria-label="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="destination"
+                  name="destination"
+                  placeholder="e.g. Kyoto, Japan or Paris, France"
+                  required
+                  aria-required="true"
+                  maxlength="100"
+                  autocomplete="off"
+                />
+              </div>
+
+              <!-- Days -->
+              <div class="form-group">
+                <label for="days">
+                  Number of Days <span class="required" aria-label="required">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="days"
+                  name="days"
+                  placeholder="e.g. 5"
+                  min="1" max="30"
+                  required
+                  aria-required="true"
+                  value="5"
+                />
+              </div>
+
+              <!-- Budget -->
+              <div class="form-group">
+                <label for="budget">
+                  Total Budget (USD) <span class="required" aria-label="required">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="budget"
+                  name="budget"
+                  placeholder="e.g. 2000"
+                  min="50" max="1000000"
+                  step="50"
+                  required
+                  aria-required="true"
+                  value="2000"
+                />
+              </div>
+
+              <!-- Travelers -->
+              <div class="form-group">
+                <label for="travelers">Number of Travelers</label>
+                <input
+                  type="number"
+                  id="travelers"
+                  name="travelers"
+                  placeholder="e.g. 2"
+                  min="1" max="50"
+                  value="2"
+                />
+              </div>
+
+              <!-- Budget Style (read-only hint) -->
+              <div class="form-group">
+                <label for="budget-hint">Budget Style</label>
+                <input
+                  type="text"
+                  id="budget-hint"
+                  readonly
+                  placeholder="Auto-detected from your budget"
+                  aria-live="polite"
+                  aria-label="Budget style auto-detected"
+                />
+              </div>
+
+              <!-- Interests -->
+              <div class="form-group full-width">
+                <label id="interests-label">
+                  Interests <span class="required" aria-label="required">*</span>
+                  <span class="text-muted"> (select at least 1)</span>
+                </label>
+                <div class="interests-grid" role="group" aria-labelledby="interests-label">
+                  <!-- chips rendered by JS for DRY approach -->
+                </div>
+              </div>
+
+            </div><!-- /form-grid -->
+
+            <!-- Error Banner -->
+            <div id="error-banner" role="alert" aria-live="assertive">
+              <span>⚠️</span>
+              <span id="error-msg"></span>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submit-btn" aria-label="Generate my AI travel plan">
+              <span>✨ Generate My Travel Plan</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading -->
+    <div id="loading" role="status" aria-live="polite" aria-label="Generating travel plan">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">
+        <strong>🤖 AI is crafting your perfect itinerary…</strong>
+        Planning your trip to <span id="loading-dest"></span>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <section id="results" aria-label="Trip plan results" aria-live="polite">
+      <div class="container">
+        <div id="results-inner"></div>
+      </div>
+    </section>
+
+
+  <!-- Footer -->
+  <footer role="contentinfo">
+    <div class="container">
+      <p>
+        Built with ❤️ using
+        <a href="https://ai.google.dev/" target="_blank" rel="noopener">Gemini AI</a>,
+        <a href="https://developers.google.com/maps" target="_blank" rel="noopener">Google Maps</a> &amp;
+        <a href="https://fastapi.tiangolo.com/" target="_blank" rel="noopener">FastAPI</a>
+        · AI Travel Planning &amp; Experience Engine
+      </p>
+    </div>
+  </footer>
+
+  <script src="/static/script.js" defer></script>
+  <script>
+    // Render interest chips
+    (function () {
+      const INTERESTS = [
+        { value: 'culture',     label: '🎭 Culture' },
+        { value: 'adventure',   label: '🏄 Adventure' },
+        { value: 'food',        label: '🍜 Food' },
+        { value: 'nature',      label: '🌿 Nature' },
+        { value: 'history',     label: '🏛️ History' },
+        { value: 'shopping',    label: '🛍️ Shopping' },
+        { value: 'nightlife',   label: '🎵 Nightlife' },
+        { value: 'art',         label: '🎨 Art' },
+        { value: 'wellness',    label: '🧘 Wellness' },
+        { value: 'photography', label: '📷 Photography' },
+        { value: 'beaches',     label: '🏖️ Beaches' },
+        { value: 'mountains',   label: '⛰️ Mountains' },
+        { value: 'family',      label: '👨‍👩‍👧 Family' },
+        { value: 'luxury',      label: '💎 Luxury' },
+      ];
+      const defaults = new Set(['culture', 'food']);
+      const grid = document.querySelector('.interests-grid');
+      INTERESTS.forEach(({ value, label }) => {
+        const chip = document.createElement('label');
+        chip.className = 'interest-chip';
+        chip.innerHTML = `
+          <input type="checkbox" name="interests" value="${value}" ${defaults.has(value) ? 'checked' : ''} aria-label="${label}" />
+          <span>${label}</span>`;
+        grid.appendChild(chip);
+      });
+    })();
+
+    // Budget style hint
+    (function () {
+      const budgetInput = document.getElementById('budget');
+      const daysInput   = document.getElementById('days');
+      const travInput   = document.getElementById('travelers');
+      const hint        = document.getElementById('budget-hint');
+      function update() {
+        const b = parseFloat(budgetInput.value) || 0;
+        const d = parseInt(daysInput.value)     || 1;
+        const t = parseInt(travInput.value)     || 1;
+        const ppd = b / (d * t);
+        hint.value = ppd < 80 ? '🎒 Budget Travel' : ppd < 250 ? '✈️ Mid-Range' : '💎 Luxury';
+      }
+      [budgetInput, daysInput, travInput].forEach(el => el.addEventListener('input', update));
+      update();
+    })();
+  </script>
+</body>
+</html>
