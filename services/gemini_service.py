@@ -1,13 +1,15 @@
 """
 Gemini AI Service — generates all travel intelligence.
 Uses google-generativeai SDK with structured JSON prompting.
+Includes in-memory LRU cache to avoid redundant API calls for identical requests.
 """
 from __future__ import annotations
 import json
 import logging
 import os
 import re
-from typing import Any, Dict, List, Optional
+from functools import lru_cache
+from typing import Any, Dict, List, Optional, Tuple
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -52,11 +54,40 @@ def generate_itinerary(
 ) -> Dict[str, Any]:
     """
     Call Gemini to generate a complete, structured travel plan.
+    Results are cached in-memory for identical (destination, days, budget,
+    travelers, interests) combinations — avoids redundant API calls.
 
     Returns a dict with keys:
       itinerary, attractions, food_suggestions, hidden_gems,
       travel_tips, budget_breakdown, weather_info
     """
+    # Use a hashable key for caching
+    cache_key = (destination.lower(), days, budget, travelers, tuple(sorted(interests)))
+    return _cached_generate(cache_key, destination, days, budget, travelers, interests)
+
+
+@lru_cache(maxsize=64)
+def _cached_generate(
+    cache_key: Tuple,  # hashable key for lru_cache
+    destination: str,
+    days: int,
+    budget: float,
+    travelers: int,
+    interests: Tuple[str, ...],
+) -> Dict[str, Any]:
+    """LRU-cached Gemini call — up to 64 unique trip combinations are memoized."""
+    interests_list = list(interests)
+    return _call_gemini(destination, days, budget, travelers, interests_list)
+
+
+def _call_gemini(
+    destination: str,
+    days: int,
+    budget: float,
+    travelers: int,
+    interests: List[str],
+) -> Dict[str, Any]:
+    """Internal: makes the actual Gemini API call."""
     interests_str = ", ".join(interests)
     budget_per_person = budget / travelers
 

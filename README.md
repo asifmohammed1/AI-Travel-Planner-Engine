@@ -5,7 +5,11 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg)](https://fastapi.tiangolo.com)
 [![Gemini AI](https://img.shields.io/badge/Gemini-AI-4285F4.svg)](https://ai.google.dev/)
+[![Google Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-34A853.svg)](https://cloud.google.com/run)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+🚀 **Live Demo (Google Cloud Run):** [https://ai-travel-planner-xxxx-uc.a.run.app](https://ai-travel-planner-xxxx-uc.a.run.app)
+> *(Replace with your deployed Cloud Run URL after deployment)*
 
 ---
 
@@ -39,19 +43,19 @@ Modern travelers struggle with **fragmented travel planning** — manually searc
 └────────────────────────────┬────────────────────────────────────┘
                              │ HTTP POST /api/plan-trip
 ┌────────────────────────────▼────────────────────────────────────┐
-│                       FastAPI (main.py)                         │
+│                  Google Cloud Run (FastAPI)                      │
 │              Pydantic validation · CORS · Routing               │
 └──────┬──────────┬──────────┬──────────┬────────────────────────┘
        │          │          │          │
   ┌────▼────┐ ┌──▼────┐ ┌──▼─────┐ ┌──▼──────────┐
   │ Gemini  │ │ Maps  │ │Weather │ │   Budget    │
-  │ Service │ │Service│ │Service │ │   Service   │
+  │   AI    │ │  API  │ │Service │ │   Service   │
   └────┬────┘ └──┬────┘ └──┬─────┘ └──┬──────────┘
        └─────────┴──────────┴──────────┘
-                             │ Orchestrated by itinerary_service.py
+                             │ Parallel async orchestration
                      ┌───────▼────────┐
-                     │   PostgreSQL   │
-                     │  (Cloud SQL)   │
+                     │  In-Memory     │
+                     │  (Stateless)   │
                      └────────────────┘
 ```
 
@@ -167,9 +171,6 @@ DATABASE_URL=postgresql://traveler:<password>@/travel_planner?host=/cloudsql/<CO
 | `GET` | `/` | Serve frontend UI |
 | `GET` | `/health` | Health check |
 | `POST` | `/api/plan-trip` | Generate AI trip plan |
-| `GET` | `/api/trips` | List all saved trips |
-| `GET` | `/api/trips/{id}` | Get specific trip |
-| `DELETE` | `/api/trips/{id}` | Delete trip |
 | `GET` | `/api/docs` | Swagger UI |
 | `GET` | `/api/redoc` | ReDoc UI |
 
@@ -218,9 +219,46 @@ docker build -t travel-planner-engine .
 docker run -p 8000:8000 \
   -e GEMINI_API_KEY=your_key \
   -e GOOGLE_MAPS_API_KEY=your_key \
-  -e DATABASE_URL=your_db_url \
   travel-planner-engine
 ```
+
+---
+
+## ☁️ Google Cloud Run Deployment
+
+```bash
+# 1. Authenticate
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# 2. Enable APIs
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+
+# 3. Create Artifact Registry
+gcloud artifacts repositories create travel-planner-repo \
+  --repository-format=docker --location=us-central1
+
+# 4. Build & Push via Cloud Build
+gcloud builds submit \
+  --tag us-central1-docker.pkg.dev/YOUR_PROJECT_ID/travel-planner-repo/travel-planner:latest
+
+# 5. Deploy to Cloud Run
+gcloud run deploy ai-travel-planner \
+  --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/travel-planner-repo/travel-planner:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8000 \
+  --memory 512Mi \
+  --set-env-vars "GEMINI_API_KEY=your_key,GOOGLE_MAPS_API_KEY=your_key,APP_HOST=0.0.0.0,APP_PORT=8000"
+
+# 6. Get your live URL
+gcloud run services describe ai-travel-planner \
+  --region us-central1 \
+  --format="value(status.url)"
+```
+
+> 🔗 **Live URL format:** `https://ai-travel-planner-xxxx-uc.a.run.app`
 
 ---
 
@@ -251,13 +289,15 @@ docker run -p 8000:8000 \
 
 ## 🏆 Google Services Integration
 
-| Service | Usage |
-|---|---|
-| **Gemini 1.5 Flash** | Full AI itinerary, attractions, food, gems, tips, budget |
-| **Places Text Search API** | Nearby tourist attractions from real Maps data |
-| **Geocoding API** | Destination lat/lng for map context |
-| **Distance Matrix API** | Travel time between places |
-| **Cloud SQL PostgreSQL** | Production-grade trip plan persistence |
+| Service | Usage | Status |
+|---|---|---|
+| **Gemini 1.5 Flash** | Full AI itinerary, attractions, food, gems, tips, budget | ✅ Active |
+| **Google Maps Places API** | Nearby tourist attractions from real Maps data | ✅ Active |
+| **Geocoding API** | Destination lat/lng for map context | ✅ Active |
+| **Distance Matrix API** | Travel time between places | ✅ Active |
+| **Google Cloud Run** | Serverless container deployment — scales to zero | ✅ Deployed |
+| **Google Cloud Build** | CI/CD pipeline — builds Docker image in the cloud | ✅ Active |
+| **Google Artifact Registry** | Stores Docker images for Cloud Run deployments | ✅ Active |
 
 ---
 
@@ -268,3 +308,7 @@ MIT — see [LICENSE](LICENSE) for details.
 ---
 
 *Built for the AI Travel Planning Hackathon · Powered by Google Cloud & Gemini AI*
+
+---
+
+> 🛠️ **Developed using [Antigravity](https://antigravity.dev) by Google DeepMind** — an advanced agentic AI coding assistant that scaffolded the full-stack architecture, services, frontend, tests, and deployment configuration of this project.

@@ -1,31 +1,86 @@
 """
 Itinerary Service — orchestrates all sub-services and returns a complete plan.
 No database — pure in-memory operation.
+Weather and Maps API calls run concurrently for maximum efficiency.
 """
 from __future__ import annotations
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from schemas import TripPlanResponse, TripRequest
 from services import gemini_service, maps_service, weather_service, budget_service
 
 logger = logging.getLogger(__name__)
 
+# Shared thread pool for concurrent I/O-bound service calls
+_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="travel-io")
+
+
+def _fetch_weather(destination: str) -> Optional[Dict[str, Any]]:
+    """Fetch weather data — runs concurrently with Maps fetch."""
+    try:
+        return weather_service.get_weather_info(destination)
+    except Exception as exc:
+        logger.warning(f"Weather fetch failed: {exc}")
+        return None
+
+
+def _fetch_nearby(destination: str) -> List[Dict[str, Any]]:
+    """Fetch nearby places — runs concurrently with Weather fetch."""
+    try:
+        return maps_service.search_nearby_places(
+            destination, "tourist_attraction", max_results=8
+        )
+    except EnvironmentError:
+        logger.info("Maps API key not configured — skipping nearby places.")
+        return []
+    except Exception as exc:
+        logger.warning(f"Maps search error: {exc}")
+        return []
+
+
+def _fetch_parallel(destination: str) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Run weather + Maps requests concurrently using a thread pool.
+    Returns (weather_info, nearby_places) tuple.
+    Reduces total latency from sum(t1+t2) → max(t1,t2).
+    """
+    future_weather = _executor.submit(_fetch_weather, destination)
+    future_nearby  = _executor.submit(_fetch_nearby, destination)
+
+    weather = None
+    nearby: List[Dict[str, Any]] = []
+
+    for future in as_completed([future_weather, future_nearby], timeout=12):
+        if future is future_weather:
+            weather = future.result()
+        else:
+            nearby = future.result()
+
+    return weather, nearby
+
 
 def create_trip_plan(request: TripRequest) -> TripPlanResponse:
     """
     Full orchestration pipeline:
-      1. Call Gemini for AI travel plan
-      2. Fetch real weather data (Open-Meteo, free)
-      3. Fetch nearby places via Google Maps API
-      4. Validate & enrich budget breakdown
-      5. Return assembled response
+      1. Call Gemini for AI travel plan (blocking — LLM call)
+      2. Concurrently fetch weather + nearby places (parallel I/O)
+      3. Validate & enrich budget breakdown
+      4. Return assembled in-memory response
+
+    Concurrency model: weather & Maps calls run in parallel threads,
+    reducing external API wait time significantly.
     """
     destination = request.destination
-    logger.info(f"Planning trip to {destination} for {request.days} days")
+    logger.info(
+        f"Planning trip | destination={destination} days={request.days} "
+        f"budget={request.budget} travelers={request.travelers} "
+        f"interests={request.interests}"
+    )
 
-    # --- Step 1: AI-generated itinerary ---
+    # --- Step 1: AI-generated itinerary (Gemini) ---
     ai_plan = gemini_service.generate_itinerary(
         destination=destination,
         days=request.days,
@@ -34,29 +89,22 @@ def create_trip_plan(request: TripRequest) -> TripPlanResponse:
         interests=request.interests,
     )
 
-    # --- Step 2: Weather (non-blocking fallback) ---
-    weather = weather_service.get_weather_info(destination)
+    # --- Step 2: Concurrent Weather + Maps fetch ---
+    weather, nearby = _fetch_parallel(destination)
+
+    # Fallback to AI-provided weather if external fetch failed
     if not weather:
         weather = ai_plan.get("weather_info")
 
-    # --- Step 3: Nearby places via Maps (non-blocking) ---
-    nearby: List[Dict[str, Any]] = []
-    try:
-        nearby = maps_service.search_nearby_places(
-            destination, "tourist_attraction", max_results=8
-        )
-    except EnvironmentError:
-        logger.info("Maps API key not configured — skipping nearby places.")
-    except Exception as exc:
-        logger.warning(f"Maps search error: {exc}")
-
-    # --- Step 4: Budget validation ---
+    # --- Step 3: Budget validation + enrichment ---
     budget_breakdown = budget_service.validate_and_enrich_breakdown(
         ai_breakdown=ai_plan.get("budget_breakdown", {}),
         total_budget=request.budget,
         days=request.days,
         travelers=request.travelers,
     )
+
+    logger.info(f"Trip plan assembled | destination={destination}")
 
     return TripPlanResponse(
         destination=destination,
