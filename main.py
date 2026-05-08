@@ -16,10 +16,12 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from config import get_settings
 from schemas import ErrorResponse, HealthResponse, TripPlanResponse, TripRequest
 from services import itinerary_service
 
 load_dotenv()
+settings = get_settings()
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -48,7 +50,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -72,7 +74,11 @@ async def health_check():
 # ---------------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "ga_measurement_id": settings.ga_measurement_id,
+        "gtm_container_id": settings.gtm_container_id,
+        "maps_api_key": settings.google_maps_api_key,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -137,15 +143,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    host = os.getenv("APP_HOST", "0.0.0.0")
-    port = int(os.getenv("APP_PORT", "8000"))
-    debug = os.getenv("DEBUG", "false").lower() == "true"
-
-    logger.info(f"Starting Travel Planner Engine on http://{host}:{port}")
+    logger.info(f"Starting Travel Planner Engine on http://{settings.app_host}:{settings.app_port}")
     uvicorn.run(
         "main:app",
-        host=host,
-        port=port,
-        reload=debug,
+        host=settings.app_host,
+        port=settings.app_port,
+        reload=settings.debug,
         log_level="info",
     )

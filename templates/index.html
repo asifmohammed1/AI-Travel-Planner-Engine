@@ -3,15 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI-powered travel planning engine. Generate personalized itineraries, discover hidden gems, and optimize your budget with Gemini AI and Google Maps." />
+  <meta name="description" content="AI-powered travel planning engine. Generate personalized itineraries, discover hidden gems, and optimize your budget using the combined power of Google Gemini AI, Google Maps Platform, Google Analytics 4, and Google Cloud Run." />
   <meta name="keywords" content="travel planner, AI itinerary, Google Maps, Gemini AI, trip planning" />
   <meta property="og:title" content="AI Travel Planning Engine" />
-  <meta property="og:description" content="Intelligent travel assistant powered by Gemini AI" />
+  <meta property="og:description" content="Intelligent travel assistant powered by Google Gemini AI, Google Maps Platform, and Google Cloud." />
   <title>AI Travel Planning &amp; Experience Engine</title>
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>" />
+
+  {% if gtm_container_id %}
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','{{ gtm_container_id }}');</script>
+  <!-- End Google Tag Manager -->
+  {% endif %}
+
+  {% if ga_measurement_id %}
+  <!-- Google Analytics GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga_measurement_id }}', { send_page_view: true });
+    window._ga_ready = true;
+  </script>
+  <!-- End Google Analytics -->
+  {% endif %}
+
+  {% if maps_api_key %}
+  <!-- Google Maps JavaScript API -->
+  <script>
+    function initMap() { window._mapsReady = true; }
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={{ maps_api_key }}&libraries=places&callback=initMap">
+  </script>
+  {% endif %}
 </head>
 <body>
+  {% if gtm_container_id %}
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ gtm_container_id }}"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  {% endif %}
 
   <!-- Navigation -->
   <nav role="navigation" aria-label="Main navigation">
@@ -38,7 +77,8 @@
       <p>
         Tell us your destination and preferences — our AI crafts a complete
         day-by-day itinerary with attractions, food, hidden gems, and smart
-        budget allocation in seconds.
+        budget allocation in seconds. Built on a robust foundation of Google Services
+        including <b>Google Gemini AI</b>, <b>Google Maps API</b> (Places & Maps JS), and deployed serverless on <b>Google Cloud Run</b>.
       </p>
       <div class="hero-stats">
         <div class="hero-stat">
@@ -186,6 +226,17 @@
     <section id="results" aria-label="Trip plan results" aria-live="polite">
       <div class="container">
         <div id="results-inner"></div>
+        <!-- Google Maps Interactive Destination Map -->
+        <div id="map-section" class="map-section hidden" aria-label="Destination map">
+          <div class="section-header">
+            <div class="section-icon" style="background:#4285F420">🗺️</div>
+            <div>
+              <div class="section-title">Destination Map</div>
+              <div class="section-subtitle">Powered by Google Maps</div>
+            </div>
+          </div>
+          <div id="destination-map" style="width:100%;height:400px;border-radius:16px;overflow:hidden;"></div>
+        </div>
       </div>
     </section>
 

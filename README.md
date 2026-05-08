@@ -15,7 +15,9 @@
 
 ## 📌 Problem Statement
 
-Modern travelers struggle with **fragmented travel planning** — manually searching for itineraries, comparing budgets, discovering local food, and finding hidden gems across dozens of tabs. This project solves that with a single AI-powered assistant that delivers a complete, personalized trip plan in seconds.
+Modern travelers struggle with **fragmented travel planning** — manually searching for itineraries, comparing budgets, discovering local food, and finding hidden gems across dozens of tabs. This project solves that with a single AI-powered assistant that delivers a complete, personalized trip plan in seconds. 
+
+By heavily leveraging the **Google Cloud Ecosystem** and **Google Services**, this application achieves a seamless user experience. We use **Google Gemini 1.5 Flash** for high-speed, intelligent itinerary generation and **Google Maps Platform** (Places, Geocoding, Distance Matrix, and Maps JavaScript API) to ground the AI's suggestions in real-world location data. Furthermore, user behavior is tracked using **Google Analytics (GA4)** and **Google Tag Manager (GTM)** to enable continuous optimization, and the entire stack is deployed serverless on **Google Cloud Run** using **Google Cloud Build** and **Artifact Registry**.
 
 ---
 
@@ -293,8 +295,11 @@ gcloud run services describe ai-travel-planner \
 |---|---|---|
 | **Gemini 1.5 Flash** | Full AI itinerary, attractions, food, gems, tips, budget | ✅ Active |
 | **Google Maps Places API** | Nearby tourist attractions from real Maps data | ✅ Active |
+| **Google Maps JavaScript API**| Interactive, dynamic maps rendering destination and nearby places on the frontend | ✅ Active |
 | **Geocoding API** | Destination lat/lng for map context | ✅ Active |
 | **Distance Matrix API** | Travel time between places | ✅ Active |
+| **Google Analytics (GA4)** | Advanced user behavior tracking, funnel analysis, and conversion events | ✅ Active |
+| **Google Tag Manager** | Centralized tag management for seamless marketing and tracking deployments | ✅ Active |
 | **Google Cloud Run** | Serverless container deployment — scales to zero | ✅ Deployed |
 | **Google Cloud Build** | CI/CD pipeline — builds Docker image in the cloud | ✅ Active |
 | **Google Artifact Registry** | Stores Docker images for Cloud Run deployments | ✅ Active |

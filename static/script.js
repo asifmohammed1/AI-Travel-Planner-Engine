@@ -12,6 +12,8 @@ const loadingDest = document.getElementById('loading-dest');
 const resultsEl   = document.getElementById('results');
 const errorBanner = document.getElementById('error-banner');
 const errorMsg    = document.getElementById('error-msg');
+const mapSection  = document.getElementById('map-section');
+const mapDiv      = document.getElementById('destination-map');
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let currentPlan = null;
@@ -53,6 +55,14 @@ async function planTrip() {
     });
 
     const data = await response.json();
+
+    if (window.gtag) {
+      gtag('event', 'generate_trip_plan', {
+        'event_category': 'Trip Planning',
+        'event_label': destination,
+        'value': budget
+      });
+    }
 
     if (!response.ok) {
       throw new Error(data.detail || 'Failed to generate trip plan.');
@@ -121,7 +131,55 @@ function renderResults(plan) {
     root.appendChild(renderNearby(plan.nearby_places));
   }
 
+  // Initialize Map if Google Maps API is loaded
+  if (window._mapsReady && plan.nearby_places && plan.nearby_places.length > 0) {
+      initDestinationMap(plan);
+  } else {
+      mapSection.classList.add('hidden');
+  }
+
   resultsEl.classList.add('active');
+}
+
+function initDestinationMap(plan) {
+    mapSection.classList.remove('hidden');
+    // Use the first nearby place to center the map, as we don't have explicit lat/lng for the destination itself in the schema
+    const firstPlace = plan.nearby_places[0];
+    const center = { lat: firstPlace.lat, lng: firstPlace.lng };
+
+    const map = new google.maps.Map(mapDiv, {
+        zoom: 12,
+        center: center,
+        mapId: 'DEMO_MAP_ID', // Replace with a real Map ID if using advanced markers
+    });
+
+    // Add marker for destination center
+    new google.maps.Marker({
+        position: center,
+        map: map,
+        title: plan.destination,
+        icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+    });
+
+    // Add markers for nearby places
+    plan.nearby_places.forEach(place => {
+        if (place.lat && place.lng) {
+            const marker = new google.maps.Marker({
+                position: { lat: place.lat, lng: place.lng },
+                map: map,
+                title: place.name
+            });
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<div style="padding: 5px;"><strong>${esc(place.name)}</strong><br>${esc(place.address)}</div>`
+            });
+            marker.addListener("click", () => {
+                infoWindow.open({
+                    anchor: marker,
+                    map,
+                });
+            });
+        }
+    });
 }
 
 function sectionWrap(iconEmoji, iconColor, title, subtitle, content) {
